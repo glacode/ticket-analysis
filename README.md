@@ -57,4 +57,4 @@ python ticket_analysis.py
 - **`cluster_details.html`**: A detailed report containing all tickets grouped by their semantic category.
 
 ## 📄 License
-This project is open-source and available for any personal or commercial use.
+This project is open-source.
