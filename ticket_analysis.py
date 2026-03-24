@@ -25,18 +25,30 @@ def run_semantic_analysis_pro(csv_file, n_clusters=20):
     documents = (df['short_description'] + " " + df['description']).tolist()
 
     print("--- 2. Generating Embeddings (Multilingual Model) ---")
+    # Using 'paraphrase-multilingual-MiniLM-L12-v2' which converts text into a 
+    # 384-dimensional vector. These vectors represent the semantic meaning of the text.
+    # Because it's a multilingual model, similar concepts in different languages 
+    # (e.g., 'password reset' and 'ripristino password') will have very similar coordinates.
     model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
     embeddings = model.encode(documents, show_progress_bar=True)
 
     print("--- 3. Dimensionality Reduction (UMAP) ---")
+    # Reducing the 384-dimensional embeddings down to 5 dimensions using UMAP.
+    # This step is crucial because high-dimensional spaces (384D) suffer from the 
+    # 'Curse of Dimensionality', making it hard for K-Means to find clear groups.
+    # UMAP preserves the 'local structure', meaning tickets with similar meanings 
+    # stay very close to each other in the new 5D space.
     reducer = umap.UMAP(n_neighbors=15, n_components=5, metric='cosine', random_state=42)
     embeddings_reduced = reducer.fit_transform(embeddings)
 
     print(f"--- 4. Clustering into {n_clusters} groups ---")
+    # K-Means groups the 5D points into 'n_clusters' based on their spatial proximity.
     kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
     df['cluster_id'] = kmeans.fit_predict(embeddings_reduced)
 
     print("--- 5. Human-readable Label Generation (Medoid Method) ---")
+    # Finding the 'medoid' (the real ticket closest to the cluster center) to act 
+    # as a representative human-readable label for the entire group.
     centroids = kmeans.cluster_centers_
     closest_idx, _ = pairwise_distances_argmin_min(centroids, embeddings_reduced)
     
